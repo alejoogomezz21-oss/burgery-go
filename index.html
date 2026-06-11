@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Burgery Go — Finanzas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">BURGERY<span> GO</span></div>
+  <nav>
+    <button class="active" onclick="showSection('recetas')">🍔 Recetas</button>
+    <button onclick="showSection('jornadas')">📋 Jornadas</button>
+    <button onclick="showSection('dashboard')">📊 Dashboard</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ══ SECCIÓN: RECETAS ══════════════════════════════ -->
+  <div id="recetas" class="section active">
+    <h2>Costeo de Recetas</h2>
+    <p class="section-sub">Calculá cuánto cuesta hacer cada hamburguesa y definí tu precio de venta.</p>
+
+    <div class="card">
+      <div class="card-title">Nueva receta</div>
+
+      <div class="row col2">
+        <div class="field">
+          <label>Nombre del producto</label>
+          <input type="text" id="r-nombre" placeholder="Ej: Burger Clásica" />
+        </div>
+        <div class="field">
+          <label>Categoría</label>
+          <select id="r-categoria">
+            <option>Hamburguesa simple</option>
+            <option>Hamburguesa doble</option>
+            <option>Combo</option>
+            <option>Bebida</option>
+            <option>Extra / Adición</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card-title" style="margin-top:8px;">Ingredientes</div>
+      <div style="display:grid; grid-template-columns: 1fr 90px 90px 90px 32px; gap:8px; margin-bottom:6px;">
+        <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Ingrediente</span>
+        <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Unidad</span>
+        <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Cant.</span>
+        <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">$/Unidad</span>
+        <span></span>
+      </div>
+      <div id="ingredientes-container"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addIngrediente()" style="margin-top:4px;">+ Agregar ingrediente</button>
+
+      <hr class="divider">
+
+      <div class="row col3">
+        <div class="field">
+          <label>% Margen deseado</label>
+          <input type="number" id="r-margen" value="60" min="0" max="100" />
+        </div>
+        <div class="field">
+          <label>% Gastos operativos</label>
+          <input type="number" id="r-gastos" value="15" min="0" max="100" />
+        </div>
+        <div class="field">
+          <label>Precio de venta ($)</label>
+          <input type="number" id="r-precio" placeholder="O dejá en 0 para calcular" />
+        </div>
+      </div>
+
+      <div class="result-box" id="r-resultado" style="display:none;">
+        <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Resultado del costeo</div>
+        <div class="result-grid">
+          <div class="result-item">
+            <label>Costo de ingredientes</label>
+            <div class="val amber" id="rr-costo">$0.00</div>
+          </div>
+          <div class="result-item">
+            <label>Precio sugerido</label>
+            <div class="val green" id="rr-precio">$0.00</div>
+          </div>
+          <div class="result-item">
+            <label>Ganancia por unidad</label>
+            <div class="val" id="rr-ganancia">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="calcularReceta()">⚡ Calcular</button>
+        <button class="btn btn-primary" onclick="guardarReceta()">Guardar receta →</button>
+      </div>
+    </div>
+
+    <div class="recipe-list" id="recipe-list">
+      <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">Recetas guardadas</div>
+      <div id="recipes-container">
+        <div class="empty"><span class="emoji">🍔</span>Todavía no hay recetas. ¡Agregá la primera!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECCIÓN: JORNADAS ══════════════════════════════ -->
+  <div id="jornadas" class="section">
+    <h2>Registro de Jornadas</h2>
+    <p class="section-sub">Anotá lo que vendiste y los gastos de cada jornada de Burgery Go.</p>
+
+    <div class="card jornada-form">
+      <div class="card-title">Nueva jornada</div>
+
+      <div class="row col2">
+        <div class="field">
+          <label>Fecha</label>
+          <input type="date" id="j-fecha" />
+        </div>
+        <div class="field">
+          <label>Tipo</label>
+          <select id="j-tipo">
+            <option>Viernes</option>
+            <option>Domingo</option>
+            <option>Especial</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card-title" style="margin-top:4px;">Productos vendidos</div>
+      <div style="display:grid; grid-template-columns: 1fr 80px 110px 32px; gap:8px; margin-bottom:6px;">
+        <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Producto</span>
+        <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Cant.</span>
+        <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Precio venta</span>
+        <span></span>
+      </div>
+      <div id="j-productos-container"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addProductoJornada()" style="margin-top:4px;">+ Agregar producto</button>
+
+      <hr class="divider">
+
+      <div class="card-title">Gastos de la jornada</div>
+      <div id="j-gastos-container"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addGastoJornada()" style="margin-top:4px;">+ Agregar gasto</button>
+
+      <hr class="divider">
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="color:var(--muted);font-size:13px;">Ingresos totales</span>
+          <span class="mono" id="j-total-ingresos" style="color:var(--green);">$0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="color:var(--muted);font-size:13px;">Costos de ingredientes</span>
+          <span class="mono" id="j-total-costos" style="color:var(--red);">$0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="color:var(--muted);font-size:13px;">Otros gastos</span>
+          <span class="mono" id="j-total-gastos-extra" style="color:var(--red);">$0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;margin-top:6px;">
+          <span style="font-weight:700;font-size:14px;">Ganancia neta</span>
+          <span class="mono" id="j-total-neto" style="font-size:18px;font-weight:700;">$0.00</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="calcularJornada()">⚡ Calcular</button>
+        <button class="btn btn-primary" onclick="guardarJornada()">Guardar jornada →</button>
+      </div>
+    </div>
+
+    <div class="jornada-list">
+      <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">Jornadas registradas</div>
+      <div id="jornadas-container">
+        <div class="empty"><span class="emoji">📋</span>Todavía no hay jornadas registradas.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECCIÓN: DASHBOARD ════════════════════════════ -->
+  <div id="dashboard" class="section">
+    <h2>Dashboard</h2>
+    <p class="section-sub">Un vistazo de cómo va Burgery Go en números reales.</p>
+
+    <div class="dash-grid" id="dash-kpis">
+      <div class="kpi-card">
+        <div class="kpi-label">Ingresos totales</div>
+        <div class="kpi-val" id="dash-ingresos" style="color:var(--green);">$0</div>
+        <div class="kpi-sub" id="dash-jornadas-count">0 jornadas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Gastos totales</div>
+        <div class="kpi-val" id="dash-gastos" style="color:var(--red);">$0</div>
+        <div class="kpi-sub">Ingredientes + operativos</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Ganancia neta</div>
+        <div class="kpi-val" id="dash-neto" style="color:var(--amber);">$0</div>
+        <div class="kpi-sub" id="dash-margen-pct">Margen: 0%</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Historial de jornadas</div>
+      <div id="dash-tabla-container">
+        <div class="empty"><span class="emoji">📊</span>Registrá jornadas para ver los datos aquí.</div>
+      </div>
+    </div>
+
+    <div class="row col2" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-title">Top productos más vendidos</div>
+        <div id="dash-top-productos">
+          <div class="empty" style="padding:20px;"><span class="emoji">🍔</span>Sin datos aún.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Resumen de recetas</div>
+        <div id="dash-recetas-resumen">
+          <div class="empty" style="padding:20px;"><span class="emoji">📝</span>Sin recetas guardadas.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast">✓ Guardado</div>
+
+<script src="logica.js"></script>
+</body>
+</html>
