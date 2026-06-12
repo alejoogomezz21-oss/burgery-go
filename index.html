@@ -16,6 +16,7 @@
   <nav>
     <button class="active" onclick="showSection('recetas')">🍔 Recetas</button>
     <button onclick="showSection('jornadas')">📋 Jornadas</button>
+    <button onclick="showSection('caja')">💰 Caja</button>
     <button onclick="showSection('dashboard')">📊 Dashboard</button>
   </nav>
 </header>
@@ -177,6 +178,90 @@
       <div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">Jornadas registradas</div>
       <div id="jornadas-container">
         <div class="empty"><span class="emoji">📋</span>Todavía no hay jornadas registradas.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SECCIÓN: CAJA ═══════════════════════════════════ -->
+  <div id="caja" class="section">
+    <h2>Caja</h2>
+    <p class="section-sub">El dinero real de Burgery Go: efectivo, cuenta bancaria y todos los movimientos.</p>
+
+    <div class="dash-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Dinero total</div>
+        <div class="kpi-val" id="caja-total" style="color:var(--amber);">$0.00</div>
+        <div class="kpi-sub">Efectivo + Bancario</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Efectivo</div>
+        <div class="kpi-val" id="caja-efectivo" style="color:var(--amber);">$0.00</div>
+        <div class="kpi-sub" id="caja-efectivo-pct">0% del total</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Cuenta bancaria</div>
+        <div class="kpi-val" id="caja-bancario" style="color:var(--blue);">$0.00</div>
+        <div class="kpi-sub" id="caja-bancario-pct">0% del total</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Distribución del dinero</div>
+      <div class="split-bar">
+        <div class="split-segment split-efectivo" id="split-bar-efectivo" style="width:0%"></div>
+        <div class="split-segment split-bancario" id="split-bar-bancario" style="width:0%"></div>
+      </div>
+      <div class="split-legend">
+        <span class="legend-item"><span class="dot dot-amber"></span><span id="legend-efectivo">Efectivo · 0%</span></span>
+        <span class="legend-item"><span class="dot dot-blue"></span><span id="legend-bancario">Bancario · 0%</span></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Registrar movimiento</div>
+
+      <div class="row col2">
+        <div class="field">
+          <label>Tipo</label>
+          <select id="m-tipo">
+            <option value="ingreso">Ingreso (+)</option>
+            <option value="retiro">Retiro (−)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Método</label>
+          <select id="m-metodo">
+            <option value="efectivo">Efectivo</option>
+            <option value="bancario">Cuenta bancaria</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row col2">
+        <div class="field">
+          <label>Monto</label>
+          <input type="number" id="m-monto" placeholder="$0" min="0" step="any" />
+        </div>
+        <div class="field">
+          <label>Fecha</label>
+          <input type="date" id="m-fecha" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Razón / Concepto</label>
+        <input type="text" id="m-razon" placeholder="Ej: Saldo inicial, retiro personal, pago proveedor..." />
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="guardarMovimiento()">Registrar movimiento →</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Historial de movimientos</div>
+      <div id="caja-historial-container">
+        <div class="empty"><span class="emoji">💰</span>Todavía no hay movimientos registrados.</div>
       </div>
     </div>
   </div>
