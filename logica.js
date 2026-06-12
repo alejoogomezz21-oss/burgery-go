@@ -5,7 +5,8 @@
 // ── STATE ────────────────────────────────────────────────
 let state = {
   recetas: [],
-  jornadas: []
+  jornadas: [],
+  caja: { movimientos: [] }
 };
 
 function loadState() {
@@ -13,6 +14,7 @@ function loadState() {
     const saved = localStorage.getItem('burgerygo_v1');
     if (saved) state = JSON.parse(saved);
   } catch (e) {}
+  if (!state.caja) state.caja = { movimientos: [] };
 }
 
 function saveState() {
@@ -24,9 +26,10 @@ function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  const map = { recetas: 0, jornadas: 1, dashboard: 2 };
+  const map = { recetas: 0, jornadas: 1, caja: 2, dashboard: 3 };
   document.querySelectorAll('nav button')[map[id]].classList.add('active');
   if (id === 'dashboard') renderDashboard();
+  if (id === 'caja') renderCaja();
 }
 
 // ── TOAST ────────────────────────────────────────────────
@@ -421,6 +424,134 @@ function renderJornadas() {
 }
 
 // ════════════════════════════════════════════════════════
+// CAJA
+// ════════════════════════════════════════════════════════
+function getCajaTotals() {
+  let efectivo = 0;
+  let bancario = 0;
+  state.caja.movimientos.forEach(m => {
+    const signo = m.tipo === 'ingreso' ? 1 : -1;
+    if (m.metodo === 'efectivo') efectivo += signo * m.monto;
+    else bancario += signo * m.monto;
+  });
+  return { efectivo, bancario, total: efectivo + bancario };
+}
+
+function guardarMovimiento() {
+  const tipo   = document.getElementById('m-tipo').value;
+  const metodo = document.getElementById('m-metodo').value;
+  const monto  = parseFloat(document.getElementById('m-monto').value) || 0;
+  const fecha  = document.getElementById('m-fecha').value;
+  const razon  = document.getElementById('m-razon').value.trim();
+
+  if (monto <= 0) { alert('Ingresá un monto válido.'); return; }
+  if (!fecha)     { alert('Seleccioná una fecha.'); return; }
+  if (!razon)     { alert('Escribí una razón o concepto.'); return; }
+
+  if (tipo === 'retiro') {
+    const totals     = getCajaTotals();
+    const disponible = metodo === 'efectivo' ? totals.efectivo : totals.bancario;
+    if (monto > disponible) {
+      const metodoTxt = metodo === 'efectivo' ? 'efectivo' : 'la cuenta bancaria';
+      if (!confirm(`El retiro (${fmt(monto)}) es mayor al saldo disponible en ${metodoTxt} (${fmt(disponible)}). ¿Registrar igual?`)) return;
+    }
+  }
+
+  state.caja.movimientos.push({ id: uid(), tipo, metodo, monto, fecha, razon });
+  state.caja.movimientos.sort((a, b) => b.fecha.localeCompare(a.fecha));
+  saveState();
+  renderCaja();
+  resetMovimientoForm();
+  showToast(tipo === 'ingreso' ? '✓ Ingreso registrado' : '✓ Retiro registrado');
+}
+
+function resetMovimientoForm() {
+  document.getElementById('m-monto').value = '';
+  document.getElementById('m-razon').value = '';
+  document.getElementById('m-tipo').value = 'ingreso';
+  document.getElementById('m-metodo').value = 'efectivo';
+  document.getElementById('m-fecha').value = new Date().toISOString().split('T')[0];
+}
+
+function deleteMovimiento(id) {
+  if (!confirm('¿Eliminar este movimiento? Esto cambiará el saldo total.')) return;
+  state.caja.movimientos = state.caja.movimientos.filter(m => m.id !== id);
+  saveState();
+  renderCaja();
+}
+
+function renderCaja() {
+  const { efectivo, bancario, total } = getCajaTotals();
+
+  let pctEf = 0, pctBa = 0;
+  if (total > 0) {
+    pctEf = (efectivo / total) * 100;
+    pctBa = (bancario / total) * 100;
+  }
+
+  const totalEl = document.getElementById('caja-total');
+  totalEl.textContent = fmt(total);
+  totalEl.style.color = total >= 0 ? 'var(--amber)' : 'var(--red)';
+
+  document.getElementById('caja-efectivo').textContent = fmt(efectivo);
+  document.getElementById('caja-bancario').textContent = fmt(bancario);
+  document.getElementById('caja-efectivo-pct').textContent = `${pctEf.toFixed(0)}% del total`;
+  document.getElementById('caja-bancario-pct').textContent = `${pctBa.toFixed(0)}% del total`;
+
+  const visEf = Math.max(0, Math.min(100, pctEf));
+  const visBa = Math.max(0, Math.min(100, pctBa));
+  document.getElementById('split-bar-efectivo').style.width = visEf + '%';
+  document.getElementById('split-bar-bancario').style.width = visBa + '%';
+
+  document.getElementById('legend-efectivo').textContent = `Efectivo · ${pctEf.toFixed(0)}%`;
+  document.getElementById('legend-bancario').textContent = `Bancario · ${pctBa.toFixed(0)}%`;
+
+  renderCajaHistorial();
+}
+
+function renderCajaHistorial() {
+  const container = document.getElementById('caja-historial-container');
+  const movs = state.caja.movimientos;
+
+  if (!movs.length) {
+    container.innerHTML = '<div class="empty"><span class="emoji">💰</span>Todavía no hay movimientos registrados.</div>';
+    return;
+  }
+
+  const sorted = [...movs].sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  container.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Tipo</th><th>Método</th><th>Concepto</th><th>Monto</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${sorted.map(m => {
+            const fmtDate     = new Date(m.fecha + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+            const isIngreso   = m.tipo === 'ingreso';
+            const tipoBadge   = isIngreso ? 'badge-green' : 'badge-red';
+            const tipoLabel   = isIngreso ? 'Ingreso' : 'Retiro';
+            const sign        = isIngreso ? '+' : '−';
+            const color       = isIngreso ? 'var(--green)' : 'var(--red)';
+            const metodoBadge = m.metodo === 'efectivo' ? 'badge-amber' : 'badge-blue';
+            const metodoLabel = m.metodo === 'efectivo' ? 'Efectivo' : 'Bancario';
+            return `<tr>
+              <td>${fmtDate}</td>
+              <td><span class="badge ${tipoBadge}">${tipoLabel}</span></td>
+              <td><span class="badge ${metodoBadge}">${metodoLabel}</span></td>
+              <td>${m.razon}</td>
+              <td class="mono" style="color:${color};font-weight:700">${sign} ${fmt(m.monto)}</td>
+              <td><button class="del-btn" onclick="deleteMovimiento('${m.id}')">×</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════════════════════
 // DASHBOARD
 // ════════════════════════════════════════════════════════
 function renderDashboard() {
@@ -535,5 +666,7 @@ addProductoJornada();
 addGastoJornada();
 renderRecipes();
 renderJornadas();
+renderCaja();
 
 document.getElementById('j-fecha').value = new Date().toISOString().split('T')[0];
+document.getElementById('m-fecha').value = new Date().toISOString().split('T')[0];
